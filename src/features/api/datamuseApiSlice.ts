@@ -1,6 +1,7 @@
 // features/api/datamuseApiSlice.ts
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import type { RootState } from "../../app/store";
 
 interface WordResult {
   word: string;
@@ -15,6 +16,9 @@ interface ApiRequest {
   timestamp: number;
   response?: WordResult[];
   error?: string;
+  username: string;
+  searchType: string;
+  searchTerm: string;
 }
 
 interface DatamuseState {
@@ -22,6 +26,7 @@ interface DatamuseState {
   history: ApiRequest[];
   loading: boolean;
   error: string | null;
+  requestCount: number;
 }
 
 const initialState: DatamuseState = {
@@ -29,22 +34,26 @@ const initialState: DatamuseState = {
   history: [],
   loading: false,
   error: null,
+  requestCount: 0,
 };
 
 export const searchWords = createAsyncThunk(
   "datamuse/searchWords",
-  async (params: Record<string, string>, { rejectWithValue }) => {
+  async (params: Record<string, string>, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as RootState;
+      const username = state.auth.username || "anonymous";
+
       const response = await axios.get("https://api.datamuse.com/words", {
         params,
       });
-      return response.data;
+
+      return { data: response.data, username }; // Return both data and username
     } catch (err) {
       return rejectWithValue(err.response?.data || "An error occurred");
     }
   }
 );
-
 const datamuseSlice = createSlice({
   name: "datamuse",
   initialState,
@@ -58,6 +67,10 @@ const datamuseSlice = createSlice({
       .addCase(searchWords.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        const searchType = Object.keys(action.meta.arg)[0];
+        const searchTerm = action.meta.arg[searchType];
+
+        // Remove the username or find another way to get it
         state.history.unshift({
           id: Date.now().toString(),
           url: `https://api.datamuse.com/words?${new URLSearchParams(
@@ -65,19 +78,25 @@ const datamuseSlice = createSlice({
           ).toString()}`,
           status: "pending",
           timestamp: Date.now(),
+          username: "unknown", // Temporary placeholder
+          searchType,
+          searchTerm,
+          response: undefined,
         });
       })
       .addCase(searchWords.fulfilled, (state, action) => {
         state.loading = false;
-        state.results = action.payload;
+        state.results = action.payload.data; // Access the data property
         const pendingRequest = state.history.find(
           (req) => req.status === "pending"
         );
         if (pendingRequest) {
           pendingRequest.status = "fulfilled";
-          pendingRequest.response = action.payload;
+          pendingRequest.response = action.payload.data;
+          pendingRequest.username = action.payload.username; // Set the username
         }
       })
+    
       .addCase(searchWords.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;

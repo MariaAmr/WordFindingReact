@@ -1,8 +1,7 @@
 // pages/DatamuseSearchPage.tsx
-import React, { useState } from "react";
-import { useAppDispatch, useAppSelector } from "../app/store";
+import React, { useState, useEffect } from "react";
+import { store, useAppDispatch, useAppSelector } from "../app/store";
 import { searchWords } from "../features/api/datamuseApiSlice";
-import Loader from "../Loader/Loader";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
@@ -11,9 +10,9 @@ import {
   MenuItem,
   Paper,
   Typography,
-  Chip,
   Box,
 } from "@mui/material";
+import Loader from "../Loader/Loader";
 
 const DatamuseSearchPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -23,18 +22,29 @@ const DatamuseSearchPage = () => {
   const navigate = useNavigate();
   const { token } = useAppSelector((state) => state.auth);
 
-  // Redirect to login if not authenticated
-  React.useEffect(() => {
-    if (!token) {
-      navigate("/login");
-    }
-  }, [token, navigate]);
+  // Debugging
+  useEffect(() => {
+    console.log("Current results:", results);
+  }, [results]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchTerm.trim()) return;
-    dispatch(searchWords({ [searchType]: searchTerm }));
-  };
+ const handleSearch = async (e: React.FormEvent) => {
+   e.preventDefault();
+   if (!searchTerm.trim()) return;
+
+   console.log("Searching for:", { [searchType]: searchTerm });
+   try {
+     const result = await dispatch(searchWords({ [searchType]: searchTerm }));
+     console.log("Dispatch result:", result);
+     if (searchWords.fulfilled.match(result)) {
+       console.log("Search successful - payload:", result.payload);
+       console.log("Current Redux state:", store.getState().datamuse);
+     } else if (searchWords.rejected.match(result)) {
+       console.error("Search rejected:", result.error);
+     }
+   } catch (err) {
+     console.error("Search failed:", err);
+   }
+ };
 
   if (!token) {
     return (
@@ -85,17 +95,14 @@ const DatamuseSearchPage = () => {
               disabled={loading}
               sx={{ minWidth: 100 }}
             >
-              {loading ? <Loader size={20} /> : "Search"}
+              {loading ? <Loader /> : "Search"}
             </Button>
           </Box>
 
           {error && (
-            <Chip
-              label={`Error: ${error}`}
-              color="error"
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
+            <Typography color="error" sx={{ mb: 2 }}>
+              Error: {error}
+            </Typography>
           )}
         </form>
 
@@ -107,19 +114,22 @@ const DatamuseSearchPage = () => {
           <Box display="flex" justifyContent="center" py={4}>
             <Loader />
           </Box>
+        ) : error ? (
+          <Typography color="error">Search failed: {error}</Typography>
         ) : results.length > 0 ? (
           <Box
             display="grid"
             gridTemplateColumns="repeat(auto-fill, minmax(200px, 1fr))"
             gap={2}
+            sx={{ maxHeight: "60vh", overflow: "auto" }}
           >
-            {results.map((word) => (
-              <Paper key={word.word} sx={{ p: 2 }}>
+            {results.map((word, index) => (
+              <Paper key={`${word.word}-${index}`} sx={{ p: 2 }}>
                 <Typography fontWeight="bold">{word.word}</Typography>
                 <Typography variant="body2">Score: {word.score}</Typography>
                 {word.tags && (
                   <Typography variant="caption" color="text.secondary">
-                    {word.tags.join(", ")}
+                    Tags: {word.tags.join(", ")}
                   </Typography>
                 )}
               </Paper>
@@ -127,7 +137,9 @@ const DatamuseSearchPage = () => {
           </Box>
         ) : (
           <Typography color="text.secondary" textAlign="center" py={2}>
-            No results found
+            {searchTerm
+              ? `No results found for "${searchTerm}"`
+              : "Enter a search term above"}
           </Typography>
         )}
       </Paper>
