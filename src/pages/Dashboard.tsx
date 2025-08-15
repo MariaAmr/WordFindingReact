@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation} from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate} from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/store";
 import {
   ChevronDownIcon,
@@ -23,7 +23,7 @@ const Dashboard = () => {
   });
   const dispatch = useAppDispatch();
   const location = useLocation();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   // Apply dark mode class to HTML element
   useEffect(() => {
@@ -44,7 +44,7 @@ const Dashboard = () => {
 
 const handleLogout = () => {
   localStorage.removeItem("authToken");
-  window.location.href = "/login";
+  navigate("/login");
 };
 
   if (!token && !localStorage.getItem("authToken")) {

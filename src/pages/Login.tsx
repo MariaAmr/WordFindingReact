@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../app/store";
 import { login } from "../app/authService";
 import { loginStart, loginSuccess, loginFailure } from "../app/authSlice";
@@ -19,7 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 function Login() {
   const dispatch = useAppDispatch();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -91,16 +91,16 @@ function Login() {
 //   setSubmitLoading(false); // Ensure loading is always reset
 // }
 // };
-const onSubmit = async (data: LoginFormData) => {
-  setSubmitLoading(true);
-  try {
-    const response = await login(data.username, data.password);
-    localStorage.setItem("authToken", response.token);
-    window.location.href = "/dashboard/datamuse-search";
-  } finally {
-    setSubmitLoading(false);
-  }
-};
+ const onSubmit = async (data: LoginFormData) => {
+   setSubmitLoading(true);
+   try {
+     const response = await login(data.username, data.password);
+     localStorage.setItem("authToken", response.token);
+     navigate("/dashboard/datamuse-search"); // ✅ Use navigate() instead
+   } finally {
+     setSubmitLoading(false);
+   }
+ };
 
   if (pageLoading) return <Loader />;
 
