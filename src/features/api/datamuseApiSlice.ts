@@ -27,6 +27,7 @@ interface DatamuseState {
   loading: boolean;
   error: string | null;
   requestCount: number;
+  
 }
 
 const initialState: DatamuseState = {
@@ -60,6 +61,7 @@ const datamuseSlice = createSlice({
   reducers: {
     clearHistory: (state) => {
       state.history = [];
+      state.requestCount = 0;
     },
   },
   extraReducers: (builder) => {
@@ -67,6 +69,8 @@ const datamuseSlice = createSlice({
       .addCase(searchWords.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.requestCount += 1;
+        const username = "unknown";
         const searchType = Object.keys(action.meta.arg)[0];
         const searchTerm = action.meta.arg[searchType];
 
