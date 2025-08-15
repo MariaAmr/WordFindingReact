@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation} from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../app/store";
 import {
   ChevronDownIcon,
@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { logout } from "../features/auth/authSlice";
 import { AnimatePresence, motion } from "framer-motion";
-import { Loader } from "lucide-react";
+
 
 const Dashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -57,7 +57,7 @@ const handleLogout = () => {
   if (!token && !localStorage.getItem("authToken")) {
    return (
      <div className="min-h-screen flex items-center justify-center">
-       <Loader className="h-10 w-10 text-blue-500" />
+       <span className="sr-only">Redirecting...</span>
      </div>
    );
   }

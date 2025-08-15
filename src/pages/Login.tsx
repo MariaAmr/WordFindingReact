@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useAppDispatch } from "../app/store";
 import { login } from "../app/authService";
 import { loginStart, loginSuccess, loginFailure } from "../app/authSlice";
@@ -19,7 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 function Login() {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -53,25 +53,25 @@ function Login() {
     return () => clearTimeout(timer);
   }, [location.state, setValue]);
 
-const onSubmit = async (data: LoginFormData) => {
-setSubmitLoading(true);
-dispatch(loginStart());
+// const onSubmit = async (data: LoginFormData) => {
+// setSubmitLoading(true);
+// dispatch(loginStart());
 
-try {
-  const response = await login(data.username, data.password);
+// try {
+//   const response = await login(data.username, data.password);
 
-  dispatch(
-    loginSuccess({
-      username: response.user.username,
-      token: response.token,
-    })
-  );
-  // Store tokens in localStorage
-  localStorage.setItem("authToken", response.token);
-  localStorage.setItem("username", response.user.username);
+//   dispatch(
+//     loginSuccess({
+//       username: response.user.username,
+//       token: response.token,
+//     })
+//   );
+  // // Store tokens in localStorage
+  // localStorage.setItem("authToken", response.token);
+  // localStorage.setItem("username", response.user.username);
 
   // Use window.location instead of navigate for initial auth
-  window.location.href = "/dashboard";
+
 
   // Wait for Redux state to update before navigating
   // await new Promise((resolve) => setTimeout(resolve, 0)); // Microtask delay
@@ -83,13 +83,39 @@ try {
   // console.log("Before navigation"); // Debug log
   // navigate("/dashboard");
   // console.log("After navigation"); // Debug log
-} catch (err) {
-  console.error("Login error:", err); // Debug log
-  const errorMessage = err instanceof Error ? err.message : "Login failed";
-  dispatch(loginFailure(errorMessage));
-} finally {
-  setSubmitLoading(false); // Ensure loading is always reset
-}
+// } catch (err) {
+//   console.error("Login error:", err); // Debug log
+//   const errorMessage = err instanceof Error ? err.message : "Login failed";
+//   dispatch(loginFailure(errorMessage));
+// } finally {
+//   setSubmitLoading(false); // Ensure loading is always reset
+// }
+// };
+const onSubmit = async (data: LoginFormData) => {
+  setSubmitLoading(true);
+  dispatch(loginStart());
+
+  try {
+    const response = await login(data.username, data.password);
+
+    dispatch(
+      loginSuccess({
+        username: response.user.username,
+        token: response.token,
+      })
+    );
+
+    localStorage.setItem("authToken", response.token);
+    localStorage.setItem("username", response.user.username);
+
+    // Use this instead of navigate()
+    window.location.href = "/dashboard/datamuse-search";
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Login failed";
+    dispatch(loginFailure(errorMessage));
+  } finally {
+    setSubmitLoading(false);
+  }
 };
 
   if (pageLoading) return <Loader />;
