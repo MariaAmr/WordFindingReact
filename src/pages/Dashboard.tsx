@@ -9,6 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { logout } from "../features/auth/authSlice";
 import { AnimatePresence, motion } from "framer-motion";
+import { Loader } from "lucide-react";
 
 const Dashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,15 +42,23 @@ const Dashboard = () => {
 
   const isActive = (path: string) => location.pathname.includes(path);
 
-  const handleLogout = () => {
+const handleLogout = async () => {
+  try {
     dispatch(logout());
     localStorage.removeItem("authToken");
-        // Force full page reload to reset all state
     window.location.href = "/login";
-  };
+  } catch (error) {
+    console.error("Logout failed:", error);
+    // Optionally show error to user
+  }
+};
 
   if (!token && !localStorage.getItem("authToken")) {
-    return null;
+   return (
+     <div className="min-h-screen flex items-center justify-center">
+       <Loader className="h-10 w-10 text-blue-500" />
+     </div>
+   );
   }
 
   return (
