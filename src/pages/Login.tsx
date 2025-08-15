@@ -75,9 +75,9 @@ const onSubmit = async (data: LoginFormData) => {
     localStorage.setItem("authToken", response.token);
     localStorage.setItem("username", response.user.username);
 
-    console.log("Before navigation"); // Debug log
+    // console.log("Before navigation"); // Debug log
     navigate("/dashboard");
-    console.log("After navigation"); // Debug log
+    // console.log("After navigation"); // Debug log
   } catch (err) {
     console.error("Login error:", err); // Debug log
     const errorMessage = err instanceof Error ? err.message : "Login failed";
