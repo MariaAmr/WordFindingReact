@@ -43,9 +43,8 @@ const Dashboard = () => {
   const isActive = (path: string) => location.pathname.includes(path);
 
 const handleLogout = () => {
- dispatch(logout());
- localStorage.clear(); // Clear all localStorage
- window.location.href = "/login";
+  localStorage.removeItem("authToken");
+  window.location.href = "/login";
 };
 
   if (!token && !localStorage.getItem("authToken")) {
