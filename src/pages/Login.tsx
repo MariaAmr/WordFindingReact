@@ -135,7 +135,7 @@ function Login() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md"
+            className="w-full max-w-xs sm:max-w-md bg-white rounded-lg shadow-md p-4 sm:p-8 mx-4"
           >
             <Alert
               icon={<CheckIcon fontSize="inherit" />}
