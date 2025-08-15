@@ -43,15 +43,13 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     dispatch(logout());
-    navigate("/login");
+    localStorage.removeItem("authToken");
+        // Force full page reload to reset all state
+    window.location.href = "/login";
   };
 
   if (!token && !localStorage.getItem("authToken")) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-    
-      </div>
-    );
+    return null;
   }
 
   return (
