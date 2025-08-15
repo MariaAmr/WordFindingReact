@@ -48,7 +48,9 @@ const Dashboard = () => {
 
   if (!token && !localStorage.getItem("authToken")) {
     return (
-      <div className="min-h-screen flex items-center justify-center"></div>
+      <div className="min-h-screen flex items-center justify-center">
+    
+      </div>
     );
   }
 

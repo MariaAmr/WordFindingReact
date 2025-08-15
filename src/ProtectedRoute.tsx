@@ -36,6 +36,8 @@ const ProtectedRoute = () => {
       window.location.reload();
     }
   }, [token, localStorageToken]);
+
+  // Allow access if either Redux or localStorage has a token
   const isAuthenticated = token || localStorageToken;
 
   if (!isAuthenticated) {
