@@ -23,7 +23,7 @@ const Dashboard = () => {
   });
   const dispatch = useAppDispatch();
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   // Apply dark mode class to HTML element
   useEffect(() => {
@@ -43,10 +43,15 @@ const Dashboard = () => {
   const isActive = (path: string) => location.pathname.includes(path);
 
 const handleLogout = () => {
-  dispatch(logout());
-  localStorage.removeItem("authToken");
-  // Force full page reload
-  window.location.href = "/login";
+  try {
+    dispatch(logout());
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("username");
+    window.location.href = "/login";
+  } catch (error) {
+    console.error("Logout error:", error);
+    window.location.href = "/login"; // Still redirect even if error
+  }
 };
 
   if (!token && !localStorage.getItem("authToken")) {

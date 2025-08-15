@@ -54,37 +54,42 @@ function Login() {
   }, [location.state, setValue]);
 
 const onSubmit = async (data: LoginFormData) => {
-  setSubmitLoading(true);
-  dispatch(loginStart());
+setSubmitLoading(true);
+dispatch(loginStart());
 
-  try {
-    const response = await login(data.username, data.password);
-    console.log("Login response:", response); // Debug log
+try {
+  const response = await login(data.username, data.password);
 
- dispatch(
-   loginSuccess({
-     username: response.user.username,
-     token: response.token,
-   })
- );
+  dispatch(
+    loginSuccess({
+      username: response.user.username,
+      token: response.token,
+    })
+  );
+  // Store tokens in localStorage
+  localStorage.setItem("authToken", response.token);
+  localStorage.setItem("username", response.user.username);
 
- // Wait for Redux state to update before navigating
- await new Promise((resolve) => setTimeout(resolve, 0)); // Microtask delay
- navigate("/dashboard", { replace: true });
+  // Use window.location instead of navigate for initial auth
+  window.location.href = "/dashboard";
 
-    localStorage.setItem("authToken", response.token);
-    localStorage.setItem("username", response.user.username);
+  // Wait for Redux state to update before navigating
+  // await new Promise((resolve) => setTimeout(resolve, 0)); // Microtask delay
+  // navigate("/dashboard", { replace: true });
 
-    // console.log("Before navigation"); // Debug log
-    navigate("/dashboard");
-    // console.log("After navigation"); // Debug log
-  } catch (err) {
-    console.error("Login error:", err); // Debug log
-    const errorMessage = err instanceof Error ? err.message : "Login failed";
-    dispatch(loginFailure(errorMessage));
-  } finally {
-    setSubmitLoading(false); // Ensure loading is always reset
-  }
+  // localStorage.setItem("authToken", response.token);
+  // localStorage.setItem("username", response.user.username);
+
+  // console.log("Before navigation"); // Debug log
+  // navigate("/dashboard");
+  // console.log("After navigation"); // Debug log
+} catch (err) {
+  console.error("Login error:", err); // Debug log
+  const errorMessage = err instanceof Error ? err.message : "Login failed";
+  dispatch(loginFailure(errorMessage));
+} finally {
+  setSubmitLoading(false); // Ensure loading is always reset
+}
 };
 
   if (pageLoading) return <Loader />;
