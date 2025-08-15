@@ -18,13 +18,13 @@
 // export default ProtectedRoute;
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import type { RootState } from "./app/store";
 
 const ProtectedRoute = () => {
   const { token } = useSelector((state: RootState) => state.auth);
   const localStorageToken = localStorage.getItem("authToken");
-  const location = useLocation();
+  // const location = useLocation();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
@@ -38,20 +38,17 @@ const ProtectedRoute = () => {
   }, [token, localStorageToken]);
 
   if (isCheckingAuth) {
-    return null; // or return a loading spinner
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
-  const isAuthenticated = token || localStorageToken;
-
-  if (!isAuthenticated) {
-    console.log("Not authenticated - redirecting to login");
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: location }} // Preserve the location they came from
-      />
-    );
+  if (!token && !localStorageToken) {
+    // Use window.location for complete reset
+    window.location.href = "/login";
+    return null;
   }
 
   return <Outlet />;

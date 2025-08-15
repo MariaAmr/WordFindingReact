@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "vite.config.ts",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/login",
+      "dest": "/index.html",
+      "status": 200
+    },
+    {
+      "src": "/register",
+      "dest": "/index.html",
+      "status": 200
+    },
+    {
+      "src": "/dashboard(.*)",
+      "dest": "/index.html",
+      "status": 200
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html",
+      "status": 200
+    }
+  ]
+}

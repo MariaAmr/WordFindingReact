@@ -42,15 +42,11 @@ const Dashboard = () => {
 
   const isActive = (path: string) => location.pathname.includes(path);
 
-const handleLogout = async () => {
-  try {
-    dispatch(logout());
-    localStorage.removeItem("authToken");
-    window.location.href = "/login";
-  } catch (error) {
-    console.error("Logout failed:", error);
-    // Optionally show error to user
-  }
+const handleLogout = () => {
+  dispatch(logout());
+  localStorage.removeItem("authToken");
+  // Force full page reload
+  window.location.href = "/login";
 };
 
   if (!token && !localStorage.getItem("authToken")) {
