@@ -108,8 +108,10 @@ const onSubmit = async (data: LoginFormData) => {
     localStorage.setItem("authToken", response.token);
     localStorage.setItem("username", response.user.username);
 
-    // Use this instead of navigate()
-    window.location.href = "/dashboard/datamuse-search";
+    // Add slight delay before redirect
+    setTimeout(() => {
+      window.location.pathname = "/dashboard/datamuse-search";
+    }, 100);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : "Login failed";
     dispatch(loginFailure(errorMessage));
