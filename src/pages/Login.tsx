@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { useAppDispatch } from "../app/store";
+// import { useAppDispatch } from "../app/store";
 import { login } from "../app/authService";
-import { loginStart, loginSuccess, loginFailure } from "../app/authSlice";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -18,7 +17,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 function Login() {
-  const dispatch = useAppDispatch();
+  // const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const [pageLoading, setPageLoading] = useState(true);

@@ -1,27 +1,33 @@
-import { StrictMode } from "react";
+// main.tsx
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App.tsx";
+import App from "./App";
 import { Provider } from "react-redux";
-import { store } from "./app/store.ts";
+import { store } from "./app/store";
 import { BrowserRouter } from "react-router-dom";
 import { StyledEngineProvider } from "@mui/material";
 import { CssBaseline } from "@mui/material";
 
-// Mobile viewport height fix
-document.documentElement.style.setProperty(
-  "--vh",
-  `${window.innerHeight * 0.01}px`
-);
-window.addEventListener("resize", () => {
-  document.documentElement.style.setProperty(
-    "--vh",
-    `${window.innerHeight * 0.01}px`
-  );
-});
+const useViewportHeight = () => {
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      document.documentElement.style.setProperty(
+        "--vh",
+        `${window.innerHeight * 0.01}px`
+      );
+    };
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+    updateViewportHeight();
+    window.addEventListener("resize", updateViewportHeight);
+    return () => window.removeEventListener("resize", updateViewportHeight);
+  }, []);
+};
+
+const RootComponent = () => {
+  useViewportHeight(); // Custom hook for viewport management
+
+  return (
     <StyledEngineProvider injectFirst>
       <CssBaseline />
       <Provider store={store}>
@@ -30,5 +36,15 @@ createRoot(document.getElementById("root")!).render(
         </BrowserRouter>
       </Provider>
     </StyledEngineProvider>
+  );
+};
+
+// Export for testing purposes
+export { RootComponent };
+
+// Main render
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <RootComponent />
   </StrictMode>
 );

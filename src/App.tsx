@@ -9,11 +9,11 @@ import HistoryPage from "./pages/HistoryPage";
 
 function App() {
   return (
-    <Routes>
+      <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
-
+      
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<Navigate to="datamuse-search" replace />} />
@@ -21,7 +21,7 @@ function App() {
           <Route path="datamuse-history" element={<HistoryPage />} />
         </Route>
       </Route>
-
+      
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
