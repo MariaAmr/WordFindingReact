@@ -9,25 +9,35 @@ import HistoryPage from "./pages/HistoryPage";
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL || "/"}>
       <Routes>
         {/* Redirect root path to /login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
+        {/* Public routes */}
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
         {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />}>
-            <Route path="datamuse-search" element={<DatamuseSearchPage />} />
-            <Route path="datamuse-history" element={<HistoryPage/>} />
             <Route index element={<Navigate to="datamuse-search" replace />} />
+            <Route path="datamuse-search" element={<DatamuseSearchPage />} />
+            <Route path="datamuse-history" element={<HistoryPage />} />
+
+            {/* Handle nested 404s within dashboard */}
+            <Route
+              path="*"
+              element={<Navigate to="datamuse-search" replace />}
+            />
           </Route>
         </Route>
 
-        {/* Fallback route for 404 */}
-        <Route path="*" element={<div>404 Not Found</div>} />
+        {/* Global 404 fallback */}
+        <Route
+          path="*"
+          element={<Navigate to="/login" state={{ from: location }} replace />}
+        />
       </Routes>
     </Router>
   );
