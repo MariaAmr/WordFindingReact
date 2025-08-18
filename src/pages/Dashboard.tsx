@@ -9,6 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { logout } from "../features/auth/authSlice";
 import { AnimatePresence, motion } from "framer-motion";
+import { loginSuccess } from "../app/authSlice";
 
 
 const Dashboard = () => {
@@ -16,7 +17,6 @@ const Dashboard = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { token, username } = useAppSelector((state) => state.auth);
   const [darkMode, setDarkMode] = useState(() => {
-
     const savedMode = localStorage.getItem("darkMode");
     if (savedMode !== null) return savedMode === "true";
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -24,7 +24,28 @@ const Dashboard = () => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const navigate = useNavigate();
+  // Sync Redux state with localStorage on initial load
+  useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+    const storedUsername = localStorage.getItem("username");
 
+    // Always sync with localStorage, not just when token is missing
+    if (authToken && storedUsername) {
+      // Check if current Redux state differs from localStorage
+      if (!token || token !== authToken || username !== storedUsername) {
+        dispatch(
+          loginSuccess({
+            username: storedUsername,
+            token: authToken,
+          })
+        );
+      }
+    } else if (!authToken && token) {
+      // Handle case where localStorage was cleared but Redux state remains
+      dispatch(logout());
+      navigate("/login");
+    }
+  }, [dispatch, navigate, token, username]);
   // Apply dark mode class to HTML element
   useEffect(() => {
     if (darkMode) {
@@ -42,17 +63,17 @@ const Dashboard = () => {
 
   const isActive = (path: string) => location.pathname.includes(path);
 
-const handleLogout = () => {
-  localStorage.removeItem("authToken");
-  navigate("/login");
-};
+  const handleLogout = () => {
+    localStorage.removeItem("authToken");
+    navigate("/login");
+  };
 
   if (!token && !localStorage.getItem("authToken")) {
-   return (
-     <div className="min-h-screen flex items-center justify-center">
-       <span className="sr-only">Redirecting...</span>
-     </div>
-   );
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="sr-only">Redirecting...</span>
+      </div>
+    );
   }
 
   return (

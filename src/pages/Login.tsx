@@ -1,14 +1,16 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-// import { useAppDispatch } from "../app/store";
+import { useAppDispatch } from "../app/store";
 import { login } from "../app/authService";
+import { loginSuccess } from "../app/authSlice";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import Loader from "../Loader/Loader";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckIcon } from "lucide-react";
-import Alert from '@mui/material/Alert';
+import Alert from "@mui/material/Alert";
+
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
@@ -17,14 +19,19 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 function Login() {
-  // const dispatch = useAppDispatch();
+  // Hook declarations (must be at the top level and in consistent order)
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // State declarations
   const [pageLoading, setPageLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [navigationLoading, setNavigationLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Form hook
   const {
     register: formRegister,
     handleSubmit,
@@ -34,6 +41,7 @@ function Login() {
     resolver: zodResolver(loginSchema),
   });
 
+  // Effects
   useEffect(() => {
     const timer = setTimeout(() => {
       setPageLoading(false);
@@ -52,25 +60,69 @@ function Login() {
     return () => clearTimeout(timer);
   }, [location.state, setValue]);
 
-// const onSubmit = async (data: LoginFormData) => {
-// setSubmitLoading(true);
-// dispatch(loginStart());
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(null), 3000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
-// try {
-//   const response = await login(data.username, data.password);
+  // Event handlers
+  const onSubmit = async (data: LoginFormData) => {
+  setSubmitLoading(true);
+  setError(null);
+  try {
+    const response = await login(data.username, data.password);
 
-//   dispatch(
-//     loginSuccess({
-//       username: response.user.username,
-//       token: response.token,
-//     })
-//   );
+    // Update localStorage first
+    localStorage.setItem("authToken", response.token);
+    localStorage.setItem("username", data.username);
+
+    // Then update Redux state
+    dispatch(
+      loginSuccess({
+        username: data.username,
+        token: response.token,
+      })
+    );
+
+    // Force a state refresh before navigation
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    setNavigationLoading(true);
+    navigate("/dashboard");
+  } catch (error) {
+    let message = "Login failed. Please try again.";
+    if (error instanceof Error) {
+      message = error.message.includes("Invalid")
+        ? "Invalid username or password"
+        : error.message;
+    }
+    setError(message);
+  } finally {
+    setSubmitLoading(false);
+  }
+  };
+
+  if (pageLoading) return <Loader />;
+
+  // const onSubmit = async (data: LoginFormData) => {
+  // setSubmitLoading(true);
+  // dispatch(loginStart());
+
+  // try {
+  //   const response = await login(data.username, data.password);
+
+  //   dispatch(
+  //     loginSuccess({
+  //       username: response.user.username,
+  //       token: response.token,
+  //     })
+  //   );
   // // Store tokens in localStorage
   // localStorage.setItem("authToken", response.token);
   // localStorage.setItem("username", response.user.username);
 
   // Use window.location instead of navigate for initial auth
-
 
   // Wait for Redux state to update before navigating
   // await new Promise((resolve) => setTimeout(resolve, 0)); // Microtask delay
@@ -82,68 +134,69 @@ function Login() {
   // console.log("Before navigation"); // Debug log
   // navigate("/dashboard");
   // console.log("After navigation"); // Debug log
-// } catch (err) {
-//   console.error("Login error:", err); // Debug log
-//   const errorMessage = err instanceof Error ? err.message : "Login failed";
-//   dispatch(loginFailure(errorMessage));
-// } finally {
-//   setSubmitLoading(false); // Ensure loading is always reset
-// }
-// };
- const onSubmit = async (data: LoginFormData) => {
-   setSubmitLoading(true);
-   try {
-     const response = await login(data.username, data.password);
-     localStorage.setItem("authToken", response.token);
-     navigate("/dashboard/datamuse-search"); // ✅ Use navigate() instead
-   } finally {
-     setSubmitLoading(false);
-   }
- };
-
-  if (pageLoading) return <Loader />;
+  // } catch (err) {
+  //   console.error("Login error:", err); // Debug log
+  //   const errorMessage = err instanceof Error ? err.message : "Login failed";
+  //   dispatch(loginFailure(errorMessage));
+  // } finally {
+  //   setSubmitLoading(false); // Ensure loading is always reset
+  // }
+  // };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      {/* Navigation Loader Overlay */}
+      {/* Error Display - Now at the top of the page */}
       <AnimatePresence>
-        {navigationLoading && (
+        {error && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white bg-opacity-90"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-4 left-0 right-0 flex justify-center z-50"
           >
-            <Loader />
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-8 text-lg text-gray-600"
-            >
-              Taking you to your dashboard...
-            </motion.div>
+            <div className="bg-red-100 text-red-700 p-4 rounded-md shadow-lg max-w-md w-full mx-4 text-center">
+              {error}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Success Alert */}
+      {/* Navigation Loader Overlay */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 left-0 right-0 flex justify-center z-50"
+          >
+            <div className="bg-red-100 text-red-700 p-4 rounded-md shadow-lg max-w-md w-full mx-4">
+              {error}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Success Alert - Also moved to top */}
       <AnimatePresence>
         {showAlert && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="w-full max-w-xs sm:max-w-md bg-white rounded-lg shadow-md p-4 sm:p-8 mx-4"
+            exit={{ opacity: 0, y: -50 }}
+            className="fixed top-4 left-0 right-0 flex justify-center z-50"
           >
-            <Alert
-              icon={<CheckIcon fontSize="inherit" />}
-              severity="success"
-              onClose={() => setShowAlert(false)}
-            >
-              Welcome {location.state?.username}! Please login with your new
-              account
-            </Alert>
+            <div className="w-full max-w-xs sm:max-w-md bg-white rounded-lg shadow-md p-2 sm:p-8 mx-4">
+              <Alert
+                icon={<CheckIcon fontSize="inherit" />}
+                severity="success"
+                onClose={() => setShowAlert(false)}
+              >
+                Welcome {location.state?.username}! Please login with your new
+                account
+              </Alert>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -234,7 +287,7 @@ function Login() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-40"
+            className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-30"
           >
             <Loader />
           </motion.div>

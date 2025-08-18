@@ -5,9 +5,29 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import DatamuseSearchPage from "./pages/SearchPage";
 import HistoryPage from "./pages/HistoryPage";
-
+import { useEffect } from "react";
+import { loginSuccess } from "./app/authSlice";
+import {  useAppDispatch } from "./app/store";
 
 function App() {
+  if (!localStorage.getItem("mockUsers")) {
+    localStorage.setItem(
+      "mockUsers",
+      JSON.stringify([
+        { username: "admin", password: "admin123" },
+        { username: "user1", password: "password1" },
+      ])
+    );
+  }
+  const dispatch = useAppDispatch();
+  
+useEffect(() => {
+  const token = localStorage.getItem("authToken");
+  const username = localStorage.getItem("username");
+  if (token && username) {
+    dispatch(loginSuccess({ token, username }));
+  }
+}, [dispatch]);
   return (
       <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />

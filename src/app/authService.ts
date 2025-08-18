@@ -77,7 +77,7 @@ api.interceptors.response.use(
 );
 
 export const login = async (username: string, password: string) => {
-  await delay(300);
+  // await delay(300);
 
   const users = getMockUsers();
   const user = users.find(
