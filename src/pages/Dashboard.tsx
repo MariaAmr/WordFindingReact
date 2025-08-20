@@ -7,7 +7,7 @@ import {
   SunIcon,
   MoonIcon,
 } from "@heroicons/react/24/outline";
-import { logout } from "../features/auth/authSlice";
+// import { logout } from "../features/auth/authSlice";
 import { AnimatePresence, motion } from "framer-motion";
 import { loginSuccess } from "../app/authSlice";
 
@@ -26,27 +26,35 @@ const Dashboard = () => {
   const navigate = useNavigate();
   // Sync Redux state with localStorage on initial load
   useEffect(() => {
-    const authToken = localStorage.getItem("authToken");
-    const storedUsername = localStorage.getItem("username");
+    const syncAuthState = () => {
+      const lsToken = localStorage.getItem("authToken");
+      const lsUsername = localStorage.getItem("username");
+      const currentToken = token;
+      const currentUsername = username;
 
-    // Always sync with localStorage, not just when token is missing
-    if (authToken && storedUsername) {
-      // Check if current Redux state differs from localStorage
-      if (!token || token !== authToken || username !== storedUsername) {
-        dispatch(
-          loginSuccess({
-            username: storedUsername,
-            token: authToken,
-          })
-        );
+      if (lsToken && lsUsername) {
+        // Force update if any mismatch exists
+        if (lsToken !== currentToken || lsUsername !== currentUsername) {
+          dispatch(
+            loginSuccess({
+              token: lsToken,
+              username: lsUsername,
+            })
+          );
+        }
       }
-    } else if (!authToken && token) {
-      // Handle case where localStorage was cleared but Redux state remains
-      dispatch(logout());
-      navigate("/login");
-    }
-  }, [dispatch, navigate, token, username]);
-  // Apply dark mode class to HTML element
+    };
+
+    // Sync immediately on mount
+    syncAuthState();
+
+    // Set up storage event listener
+    const handleStorageChange = () => syncAuthState();
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, [dispatch, token, username]); // Add token and username as dependencies
+ 
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark");
@@ -75,7 +83,11 @@ const Dashboard = () => {
       </div>
     );
   }
-
+  // console.log("Dashboard Redux state:", { token, username });
+  // console.log("Dashboard localStorage:", {
+  //   token: localStorage.getItem("authToken"),
+  //   username: localStorage.getItem("username"),
+  // });
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900/[0.95]">
       {/* Navigation */}
@@ -95,6 +107,18 @@ const Dashboard = () => {
             id="navbar-dropdown"
           >
             <ul className="flex flex-col font-medium p-4 md:p-0 mt-4 border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white dark:bg-gray-800  dark:border-gray-700">
+              <li>
+                <Link
+                  to="/dashboard/home"
+                  className={`block py-2 px-3 rounded-sm ${
+                    isActive("home")
+                      ? "text-white bg-blue-700 md:bg-transparent md:text-blue-700 dark:text-white md:dark:text-blue-500"
+                      : "text-gray-900 hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 dark:text-white md:dark:hover:text-blue-500 "
+                  }`}
+                >
+                  Home
+                </Link>
+              </li>
               <li>
                 <Link
                   to="/dashboard/datamuse-search"
@@ -205,8 +229,20 @@ const Dashboard = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 }}
                   >
+                    {" "}
                     <Link
-                      to="/dashboard/datamuse-search"
+                      to="home"
+                      className={`block py-2 px-3 rounded-sm ${
+                        isActive("home")
+                          ? "text-white bg-blue-700 dark:text-white"
+                          : "text-gray-900 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700"
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      to="datamuse-search"
                       className={`block py-2 px-3 rounded-sm ${
                         isActive("datamuse-search")
                           ? "text-white bg-blue-700 dark:text-white"
@@ -223,7 +259,7 @@ const Dashboard = () => {
                     transition={{ delay: 0.15 }}
                   >
                     <Link
-                      to="/dashboard/datamuse-history"
+                      to="datamuse-history"
                       className={`block py-2 px-3 rounded-sm ${
                         isActive("datamuse-history")
                           ? "text-white bg-blue-700 dark:text-white"

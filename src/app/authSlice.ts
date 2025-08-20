@@ -68,8 +68,16 @@ const authSlice = createSlice({
       localStorage.removeItem("authToken");
       localStorage.removeItem("username");
     },
-    
   },
+  // extraReducers: (builder) => {
+  //   builder.addMatcher(
+  //     (action) => action.type.endsWith("/forceRefresh"),
+  //     (state) => {
+  //       state.token = localStorage.getItem("authToken");
+  //       state.username = localStorage.getItem("username");
+  //     }
+  //   );
+  // },
 });
 
 export const {

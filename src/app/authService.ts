@@ -1,7 +1,7 @@
 import axios from "axios";
 import { store } from "./store";
 import loginSuccess, {  logout } from "../features/auth/authSlice";
-import { delay } from "./utils";
+import { delay, saveAuthData } from "./utils";
 
 const API_URL = "http://localhost:5173/";
 
@@ -77,25 +77,32 @@ api.interceptors.response.use(
 );
 
 export const login = async (username: string, password: string) => {
-  // await delay(300);
+  try {
+    const users = getMockUsers();
+    const user = users.find(
+      (u) => u.username === username && u.password === password
+    );
+    if (!user) throw new Error("Invalid username or password");
 
-  const users = getMockUsers();
-  const user = users.find(
-    (u) => u.username === username && u.password === password
-  );
+    const token = `mock-token-${username}-${Date.now()}`;
 
-  if (!user) throw new Error("Invalid username or password");
+    saveAuthData(token, username); // Using the consistent utility function
 
-  const token = "mock-jwt-token-" + Math.random().toString(36).substring(2);
-
-  // Store auth data
-  localStorage.setItem("authToken", token);
-  localStorage.setItem("username", username);
-
-  return {
-    token,
-    user: { username: user.username, email: user.email },
-  };
+    return {
+      token,
+      user: {
+        username: user.username,
+        email: user.email,
+      },
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : "An unknown error occurred during login"
+    );
+  }
 };
 
 export const register = async (
@@ -131,8 +138,18 @@ export const refreshToken = async () => {
 };
 
 export const validateToken = async () => {
-  await delay(150); // Very fast validation for mock
-  return { isValid: !!localStorage.getItem("authToken") };
-};
+  await delay(150);
+  const token = localStorage.getItem("authToken");
 
+
+  if (!token) return { isValid: false };
+
+ 
+  const isValid =
+    token.startsWith("mock-token-") ||
+    token.startsWith("mock-jwt-token-") ||
+    token.startsWith("mock-refreshed-token-");
+
+  return { isValid };
+};
 export default api;

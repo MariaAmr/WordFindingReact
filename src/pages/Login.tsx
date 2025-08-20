@@ -19,7 +19,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 function Login() {
-  // Hook declarations (must be at the top level and in consistent order)
+  // Hook declarations]
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,7 +27,7 @@ function Login() {
   // State declarations
   const [pageLoading, setPageLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [navigationLoading, setNavigationLoading] = useState(false);
+  // const [navigationLoading, setNavigationLoading] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,37 +70,36 @@ function Login() {
   const onSubmit = async (data: LoginFormData) => {
   setSubmitLoading(true);
   setError(null);
-  try {
-    const response = await login(data.username, data.password);
+    try {
+      const response = await login(data.username, data.password);
 
-    // Update localStorage first
-    localStorage.setItem("authToken", response.token);
-    localStorage.setItem("username", data.username);
+      localStorage.setItem("authToken", response.token);
+      localStorage.setItem("username", data.username);
 
-    // Then update Redux state
-    dispatch(
-      loginSuccess({
-        username: data.username,
-        token: response.token,
-      })
-    );
+      await new Promise<void>((resolve) => {
+        dispatch(
+          loginSuccess({
+            username: data.username,
+            token: response.token,
+          })
+        );
+        resolve();
+      });
 
-    // Force a state refresh before navigation
-    await new Promise((resolve) => setTimeout(resolve, 50));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
 
-    setNavigationLoading(true);
-    navigate("/dashboard");
-  } catch (error) {
-    let message = "Login failed. Please try again.";
-    if (error instanceof Error) {
-      message = error.message.includes("Invalid")
-        ? "Invalid username or password"
-        : error.message;
+      navigate("/dashboard", { state: { fromLogin: true } });
+    } catch (error) {
+      let message = "Login failed. Please try again.";
+      if (error instanceof Error) {
+        message = error.message.includes("Invalid")
+          ? "Invalid username or password"
+          : error.message;
+      }
+      setError(message);
+    } finally {
+      setSubmitLoading(false);
     }
-    setError(message);
-  } finally {
-    setSubmitLoading(false);
-  }
   };
 
   if (pageLoading) return <Loader />;

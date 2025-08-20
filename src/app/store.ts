@@ -22,6 +22,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     datamuse: datamuseReducer,
+    
   },
   preloadedState, // Add this line to initialize with localStorage values
   middleware: (getDefaultMiddleware) =>

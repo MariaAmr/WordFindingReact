@@ -8,6 +8,7 @@ import HistoryPage from "./pages/HistoryPage";
 import { useEffect } from "react";
 import { loginSuccess } from "./app/authSlice";
 import {  useAppDispatch } from "./app/store";
+import Home from "./pages/home";
 
 function App() {
   if (!localStorage.getItem("mockUsers")) {
@@ -29,19 +30,21 @@ useEffect(() => {
   }
 }, [dispatch]);
   return (
-      <Routes>
+    <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
-      
+
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />}>
-          <Route index element={<Navigate to="datamuse-search" replace />} />
+          <Route index element={<Navigate to="home" replace />} />
+          <Route path="home" element={<Home />} />
+          {/* <Route index element={<Navigate to="datamuse-search" replace />} /> */}
           <Route path="datamuse-search" element={<DatamuseSearchPage />} />
           <Route path="datamuse-history" element={<HistoryPage />} />
         </Route>
       </Route>
-      
+
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../app/store";
-import { searchWords } from "../features/api/datamuseApiSlice";
-import { useNavigate } from "react-router-dom";
+import { fetchSuggestions, searchWords } from "../features/api/datamuseApiSlice";
+import { useLocation } from "react-router-dom";
 import {
   Button,
   TextField,
@@ -13,9 +13,11 @@ import {
   Collapse,
   Chip,
   IconButton,
+  Autocomplete,
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, History, Close } from "@mui/icons-material";
+
 
 const DatamuseSearchPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -25,29 +27,72 @@ const DatamuseSearchPage = () => {
     Array<{ type: string; term: string }>
   >([]);
   const dispatch = useAppDispatch();
-  const { results, loading, error } = useAppSelector((state) => state.datamuse);
-  const navigate = useNavigate();
+  const { results, loading, error, suggestions } = useAppSelector(
+    (state) => state.datamuse
+  );
+  // const navigate = useNavigate();
   const { token } = useAppSelector((state) => state.auth);
   const searchTimeout = useRef<NodeJS.Timeout>();
+  const [openSuggestions, setOpenSuggestions] = useState(false);
+  const location = useLocation();
 
-  // Real-time search with debounce
+  // Handle navigation from history - populate inputs and use existing results
   useEffect(() => {
-    if (searchTerm.trim() === "") return;
+    if (location.state?.fromHistory) {
+      const {
+        searchType: historyType,
+        searchTerm: historyTerm,
+        existingResults,
+      } = location.state;
 
+      // Set the search inputs
+      if (historyType) setSearchType(historyType);
+      if (historyTerm) setSearchTerm(historyTerm);
+
+      // If we have existing results, dispatch an action to set them in Redux
+      if (existingResults && existingResults.length > 0) {
+        dispatch({
+          type: "datamuse/setResultsFromHistory",
+          payload: existingResults,
+        });
+      }
+
+      // Clear the state to avoid re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location, dispatch]);
+
+useEffect(() => {
+  // Don't search if coming from history with existing results
+  if (location.state?.fromHistory && location.state?.existingResults) {
+    return;
+  }
+
+  if (searchTerm.trim() === "") return;
+
+  if (searchTimeout.current) {
+    clearTimeout(searchTimeout.current);
+  }
+
+  searchTimeout.current = setTimeout(() => {
+    handleSearch();
+  }, 500);
+
+  return () => {
     if (searchTimeout.current) {
       clearTimeout(searchTimeout.current);
     }
+  };
+}, [searchTerm, searchType, location.state]);
 
-    searchTimeout.current = setTimeout(() => {
-      handleSearch();
-    }, 500);
-
-    return () => {
-      if (searchTimeout.current) {
-        clearTimeout(searchTimeout.current);
-      }
-    };
-  }, [searchTerm, searchType]);
+  useEffect(() => {
+    if (searchTerm.trim().length > 2) {
+      // Only fetch after 2 characters
+      dispatch(fetchSuggestions(searchTerm));
+    } else {
+      setOpenSuggestions(false);
+    }
+  }, [searchTerm, dispatch]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -135,30 +180,142 @@ const DatamuseSearchPage = () => {
                 <MenuItem value="rel_nry">Nouns for</MenuItem>
               </Select>
 
-              <TextField
-                fullWidth
-                size="small"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Enter a word..."
-                InputProps={{
-                  startAdornment: <Search color="action" sx={{ mr: 1 }} />,
-                  sx: {
-                    borderRadius: 2,
-                    "& input": {
-                      cursor: "pointer",
+              <Autocomplete
+                freeSolo
+                disableClearable
+                options={suggestions.map((suggestion) => suggestion.word)}
+                open={openSuggestions && suggestions.length > 0}
+                onOpen={() => setOpenSuggestions(true)}
+                onClose={() => {
+                  setTimeout(() => setOpenSuggestions(false), 100); // Small delay for smoother close
+                }}
+                inputValue={searchTerm}
+                onInputChange={(_, newValue) => {
+                  setSearchTerm(newValue);
+                }}
+                sx={{
+                  width: "100%",
+                  "& .MuiAutocomplete-popper": {
+                    transition: "all 0.3s ease-out",
+                  },
+                  "& .MuiAutocomplete-listbox": {
+                    transition: "opacity 0.2s ease-in-out",
+                  },
+                }}
+                componentsProps={{
+                  paper: {
+                    component: motion.div,
+                    variants: {
+                      open: {
+                        opacity: 1,
+                        y: 0,
+                        transition: {
+                          type: "spring",
+                          damping: 25,
+                          stiffness: 300,
+                        },
+                      },
+                      closed: {
+                        opacity: 0,
+                        y: -10,
+                        transition: { duration: 0.2 },
+                      },
+                    },
+                    initial: "closed",
+                    animate: openSuggestions ? "open" : "closed",
+                    sx: {
+                      transformOrigin: "top center",
+                      width: "100%",
+                      boxShadow: "0px 5px 15px rgba(0,0,0,0.1)",
+                      overflow: "hidden",
                     },
                   },
                 }}
-                onClick={handleSearch}
-                className="rounded-lg"
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    size="small"
+                    placeholder="Enter a word..."
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <motion.div
+                          animate={{
+                            rotate: loading ? 360 : 0,
+                            transition: {
+                              duration: 1,
+                              repeat: loading ? Infinity : 0,
+                            },
+                          }}
+                        >
+                          <Search
+                            color={loading ? "primary" : "action"}
+                            sx={{ mr: 1 }}
+                          />
+                        </motion.div>
+                      ),
+                      sx: {
+                        borderRadius: 2,
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          boxShadow: "0 0 0 2px rgba(25, 118, 210, 0.2)",
+                        },
+                        "& input": {
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                        },
+                        "&.Mui-focused": {
+                          boxShadow: "0 0 0 2px rgba(25, 118, 210, 0.3)",
+                        },
+                      },
+                    }}
+                  />
+                )}
+                renderOption={(props, option, state) => (
+                  <motion.li
+                    {...props}
+                    key={option}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      transition: {
+                        duration: 0.3,
+                        delay: state.index * 0.05,
+                      },
+                    }}
+                    whileHover={{
+                      backgroundColor: "rgb(255, 255, 255)",
+                      transition: { duration: 0.1 },
+                    }}
+                    style={{ backgroundColor: "rgb(220,220,220)" }}
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      "&.MuiAutocomplete-option": {
+                        minHeight: "auto",
+                      },
+                    }}
+                  >
+                    {option}
+                  </motion.li>
+                )}
+                ListboxComponent={(props) => (
+                  <motion.ul
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    {...props}
+                  />
+                )}
               />
             </Box>
 
             <Box
               display="flex"
               gap={2}
-              width={{ xs: "100%", sm: "auto" }} 
+              width={{ xs: "100%", sm: "auto" }}
               sx={{
                 flexDirection: { xs: "row", sm: "row" },
               }}
@@ -330,14 +487,14 @@ const DatamuseSearchPage = () => {
         )}
       </Paper>
 
-      <Button
-        variant="outlined"
-        onClick={() => navigate("/dashboard/datamuse-history")}
-        fullWidth
-        sx={{ borderRadius: 2 }}
-      >
-        View Full Search History
-      </Button>
+      {/* <Button
+         variant="outlined"
+         onClick={() => navigate("/dashboard/datamuse-history")}
+         fullWidth
+         sx={{ borderRadius: 2 }}
+       >
+         View Full Search History
+       </Button> */}
     </Box>
   );
 };

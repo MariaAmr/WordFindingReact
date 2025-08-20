@@ -1,28 +1,30 @@
-import { useAppSelector } from "../app/store";
+import { useAppSelector, useAppDispatch } from "../app/store";
 import {
-  Paper,
+  // Paper,
   Typography,
   Box,
-  List,
-  ListItem,
   ListItemText,
   Chip,
-  styled,
-  Button,
+  // styled,
+  // Button,
+  IconButton,
+  Card,
+  CardContent,
 } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Error, Schedule } from "@mui/icons-material";
+import { CheckCircle, Error, Schedule, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { removeFromHistory } from "../features/api/datamuseApiSlice";
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  borderRadius: "16px",
-  overflow: "hidden",
-  transition: "all 0.3s ease",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: theme.shadows[4],
-  },
-}));
+// const StyledPaper = styled(Paper)(({ theme }) => ({
+//   borderRadius: "16px",
+//   overflow: "hidden",
+//   transition: "all 0.3s ease",
+//   "&:hover": {
+//     transform: "translateY(-2px)",
+//     boxShadow: theme.shadows[4],
+//   },
+// }));
 
 const StatusIcon = ({ status }: { status: string }) => {
   switch (status) {
@@ -39,6 +41,8 @@ const DatamuseHistoryPage = () => {
   const { history, requestCount } = useAppSelector((state) => state.datamuse);
   const { token } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
   if (!token) {
     return (
       <Box p={3}>
@@ -46,6 +50,25 @@ const DatamuseHistoryPage = () => {
       </Box>
     );
   }
+
+  // Handle search from history item
+ const handleSearchFromHistory = (item: ApiRequest) => {
+   navigate("/dashboard/datamuse-search", {
+     state: {
+       searchType: item.searchType,
+       searchTerm: item.searchTerm,
+       fromHistory: true,
+       existingResults: item.response || [], // Pass the existing results
+       shouldSearch: false, // Don't make new request
+     },
+   });
+ };
+
+  // Handle delete history item
+  const handleDeleteHistoryItem = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the search navigation
+    dispatch(removeFromHistory(id));
+  };
 
   const successfulRequests = history.filter(
     (h) => h.status === "fulfilled"
@@ -140,7 +163,29 @@ const DatamuseHistoryPage = () => {
           </Typography>
         </motion.div>
       ) : (
-        <List sx={{ p: 0 }}>
+        <Box
+          sx={{
+            maxHeight: "60vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              backgroundColor: "grey.100",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "grey.400",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              backgroundColor: "grey.600",
+            },
+            mb: 2,
+          }}
+        >
           <AnimatePresence>
             {history.map((item, index) => (
               <motion.div
@@ -155,85 +200,122 @@ const DatamuseHistoryPage = () => {
                 layout
                 whileHover={{ scale: 1.01 }}
               >
-                <StyledPaper sx={{ mb: 2 }}>
-                  <ListItem sx={{ py: 2 }}>
+                <Card
+                  sx={{
+                    mb: 2,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      backgroundColor: "grey.50",
+                      transform: "translateX(4px)",
+                    },
+                  }}
+                  onClick={() => handleSearchFromHistory(item)}
+                >
+                  <CardContent
+                    sx={{
+                      py: 1,
+                      "&:last-child": { pb: 1 },
+                      position: "relative",
+                    }}
+                  >
                     <Box
                       sx={{
                         display: "flex",
                         alignItems: "center",
-                        mr: 2,
+                        justifyContent: "space-between",
                       }}
-                      component={motion.div}
-                      whileHover={{ scale: 1.1 }}
                     >
-                      <StatusIcon status={item.status} />
-                    </Box>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight={500}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", flex: 1 }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mr: 2,
+                          }}
+                          component={motion.div}
+                          whileHover={{ scale: 1.1 }}
                         >
-                          {item.searchType.toUpperCase()}: {item.searchTerm}
-                        </Typography>
-                      }
-                      secondary={
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                        >
-                          <Box
-                            component="span"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                              mt: 0.5,
-                            }}
-                          >
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.secondary"
-                             
-                            >
-                              {new Date(item.timestamp).toLocaleString()}
+                          <StatusIcon status={item.status} />
+                        </Box>
+                        <ListItemText
+                          primary={
+                            <Typography variant="subtitle1" fontWeight={500}>
+                              {item.searchType.toUpperCase()}: {item.searchTerm}
                             </Typography>
-                            {item.response && (
-                              <motion.div whileHover={{ scale: 1.05 }}>
-                                <Chip
-                                  label={`${item.response.length} results`}
-                                  size="small"
-                                  sx={{
-                                    borderRadius: "8px",
-                                    fontSize: "0.75rem",
-                                  }}
-                                />
-                              </motion.div>
-                            )}
-                          </Box>
-                        </motion.div>
-                      }
-                      sx={{ my: 0 }}
-                    />
-                  </ListItem>
-                </StyledPaper>
+                          }
+                          secondary={
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: 0.2 }}
+                            >
+                              <Box
+                                component="span"
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                  mt: 0.5,
+                                }}
+                              >
+                                <Typography
+                                  component="span"
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
+                                  {new Date(item.timestamp).toLocaleString()}
+                                </Typography>
+                                {item.response && (
+                                  <motion.div whileHover={{ scale: 1.05 }}>
+                                    <Chip
+                                      label={`${item.response.length} results`}
+                                      size="small"
+                                      sx={{
+                                        borderRadius: "8px",
+                                        fontSize: "0.75rem",
+                                      }}
+                                    />
+                                  </motion.div>
+                                )}
+                              </Box>
+                            </motion.div>
+                          }
+                          sx={{ my: 0 }}
+                        />
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => handleDeleteHistoryItem(item.id, e)}
+                        sx={{
+                          color: "error.main",
+                          "&:hover": {
+                            backgroundColor: "error.light",
+                            color: "white",
+                          },
+                        }}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </AnimatePresence>
-        </List>
+        </Box>
       )}
-      <Button
-              variant="outlined"
-              onClick={() => navigate("/dashboard/datamuse-search")}
-              fullWidth
-              sx={{ borderRadius: 2 }}
-            >
-              View Full Search History
-            </Button>
+      {/* <Button
+        variant="outlined"
+        onClick={() => navigate("/dashboard/datamuse-search")}
+        fullWidth
+        sx={{ borderRadius: 2 }}
+      >
+        View Full Word Search
+      </Button> */}
     </Box>
   );
 };
-
 export default DatamuseHistoryPage;
