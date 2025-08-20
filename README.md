@@ -8,7 +8,7 @@ Currently, two official plugins are available:
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
 ## Additional info
-if you have trouble to login , register then login then signout then login again 
+if you have trouble to login , register then login then signout, refresh page then login again 
 
 ## Expanding the ESLint configuration
 
